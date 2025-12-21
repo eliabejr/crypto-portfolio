@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16
+    container_name: database
+    environment:
+      POSTGRES_DB: crypto_portfolio
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+    container_name: api
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/crypto_portfolio
+      DJANGO_SETTINGS_MODULE: config.settings
+
+volumes:
+  postgres_data:
