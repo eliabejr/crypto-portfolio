@@ -3,7 +3,6 @@ name = "crypto-portfolio-backend"
 version = "1.0.0"
 description = "Backend API"
 authors = ["Eliabe Serafim Jr <eliabesajunior@gmail.com>"]
-readme = "README.md"
 packages = [{ include = "apps" }]
 
 [tool.poetry.dependencies]
