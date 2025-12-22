@@ -46,7 +46,7 @@
 import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDebounce } from '../../../composables/useDebounce'
-import { useInfiniteListUrl } from '../../../composables/useInfiniteListUrl'
+import { useInfiniteList } from '../../../composables/useInfiniteList'
 import { assetsApi } from '../api/assets.api'
 import { favoritesApi } from '../../favorites/api/favorites.api'
 import AppContainer from '../../../components/layout/AppContainer.vue'
@@ -73,7 +73,7 @@ const {
   search,
   loadMore,
   retry,
-} = useInfiniteListUrl(
+} = useInfiniteList(
   (page, pageSize, q) => assetsApi.listAssets({ page, pageSize, q }),
   { pageSize: 20 }
 )

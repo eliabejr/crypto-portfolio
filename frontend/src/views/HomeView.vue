@@ -160,7 +160,7 @@
         </div>
 
         <div class="mt-6 max-w-2xl">
-          <Input v-model="searchInput" placeholder="Buscar por nome ou símbolo..." @enter="handleSearch">
+          <Input v-model="searchInput" placeholder="Buscar por nome ou símbolo...">
             <template #icon>
               <div class="absolute right-3 top-1/2 transform -translate-y-1/2">
                 <svg v-if="!isSearching" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
@@ -234,9 +234,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useInfiniteList } from '../composables/useInfiniteList'
 import { useDebounce } from '../composables/useDebounce'
-import { useInfiniteScroll } from '../composables/useInfiniteScroll'
 import { cryptoService } from '../services/cryptoService'
 import CryptoCard from '../components/CryptoCard.vue'
 import CryptoCardSkeleton from '../components/CryptoCardSkeleton.vue'
@@ -319,25 +317,6 @@ const allocation = [
   { symbol: 'USDC', name: 'Stable', percent: 12 },
 ]
 
-const {
-  items,
-  isLoading,
-  isError,
-  error,
-  hasMore,
-  isEmpty,
-  isEndReached,
-  loadMore,
-  search,
-  retry,
-} = useInfiniteList(async (page, pageSize, searchQuery) => {
-  return await cryptoService.getCryptos({
-    page,
-    pageSize,
-    search: searchQuery,
-  })
-})
-
 const debouncedSearch = useDebounce(searchInput, 500)
 const isSearching = ref(false)
 
@@ -356,18 +335,4 @@ onMounted(() => {
     searchInput.value = route.query.search as string
   }
 })
-
-useInfiniteScroll(
-  () => {
-    if (hasMore.value && !isLoading.value) {
-      loadMore()
-    }
-  },
-  {
-    enabled: () => hasMore.value && !isLoading.value,
-  }
-)
-
-const handleSearch = () => {
-}
 </script>

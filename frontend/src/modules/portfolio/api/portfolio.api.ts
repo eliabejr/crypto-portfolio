@@ -20,7 +20,7 @@ export const portfolioApi = {
     try {
       const portfolio = await http.get<Portfolio>('/portfolio')
       return portfolio
-    } catch (error) {
+    } catch {
       const items = getPortfolioFromStorage()
       const totalValue = items.reduce(
         (sum, item) => sum + (item.totalValue || item.quantity * item.avgPrice),
@@ -38,7 +38,7 @@ export const portfolioApi = {
     try {
       const item = await http.post<PortfolioItem>('/portfolio', data)
       return item
-    } catch (error) {
+    } catch {
       const items = getPortfolioFromStorage()
       const existingIndex = items.findIndex((item) => item.asset.id === data.assetId)
 
@@ -57,15 +57,20 @@ export const portfolioApi = {
       }
 
       if (existingIndex >= 0) {
-        const existing = items[existingIndex]
+      const existing = items[existingIndex]
+      if (!existing) {
+        items.push(newItem)
+      } else {
         const totalQuantity = existing.quantity + data.quantity
-        const totalCost = existing.quantity * existing.avgPrice + data.quantity * data.avgPrice
+        const totalCost =
+          existing.quantity * existing.avgPrice + data.quantity * data.avgPrice
         items[existingIndex] = {
           ...existing,
           quantity: totalQuantity,
           avgPrice: totalCost / totalQuantity,
           totalValue: totalCost,
         }
+      }
       } else {
         items.push(newItem)
       }
@@ -78,7 +83,7 @@ export const portfolioApi = {
   async removeFromPortfolio(itemId: string): Promise<void> {
     try {
       await http.delete(`/portfolio/${itemId}`)
-    } catch (error) {
+    } catch {
       const items = getPortfolioFromStorage()
       const filtered = items.filter((item) => item.id !== itemId)
       savePortfolioToStorage(filtered)

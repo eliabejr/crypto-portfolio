@@ -26,6 +26,19 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return (await response.text()) as unknown as T
 }
 
+function getErrorMessage(errorData: unknown): string | undefined {
+  if (!errorData || typeof errorData !== 'object') return undefined
+  const obj = errorData as Record<string, unknown>
+
+  const message = obj['message']
+  if (typeof message === 'string' && message.trim()) return message
+
+  const detail = obj['detail']
+  if (typeof detail === 'string' && detail.trim()) return detail
+
+  return undefined
+}
+
 export interface HttpRequestOptions extends RequestInit {
   params?: Record<string, string | number>
 }
@@ -65,9 +78,9 @@ export async function httpRequest<T>(
     const response = await fetch(url, config)
 
     if (!response.ok) {
-      const errorData = await parseResponse(response).catch(() => null)
+      const errorData = await parseResponse<unknown>(response).catch(() => null)
       throw new HttpError(
-        errorData?.message || `HTTP ${response.status}: ${response.statusText}`,
+        getErrorMessage(errorData) || `HTTP ${response.status}: ${response.statusText}`,
         response.status,
         errorData
       )
