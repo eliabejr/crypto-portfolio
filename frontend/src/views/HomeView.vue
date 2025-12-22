@@ -12,7 +12,8 @@
             </p>
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400">
-            Atualizado: <span class="font-medium text-gray-700 dark:text-gray-200">{{ updatedAt }}</span>
+            Atualizado:
+            <span class="font-medium text-gray-700 dark:text-gray-200">{{ updatedAt }}</span>
           </div>
         </div>
 
@@ -68,7 +69,9 @@
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Ativos na watchlist</div>
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Ativos na watchlist
+              </div>
               <div class="mt-1 text-2xl font-bold tracking-tight tabular-nums">
                 {{ watchlistCount }}
               </div>
@@ -232,10 +235,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDebounce } from '../composables/useDebounce'
 import { cryptoService } from '../services/cryptoService'
+import type { CryptoCurrency } from '../types/crypto'
 import CryptoCard from '../components/CryptoCard.vue'
 import CryptoCardSkeleton from '../components/CryptoCardSkeleton.vue'
 import Input from '../components/ui/Input.vue'
@@ -317,11 +321,80 @@ const allocation = [
   { symbol: 'USDC', name: 'Stable', percent: 12 },
 ]
 
+const pageSize = 20
+const items = ref<CryptoCurrency[]>([])
+const page = ref(0)
+const hasMore = ref(true)
+const isLoading = ref(false)
+const isError = ref(false)
+const error = ref<Error | null>(null)
+const activeSearch = ref(searchInput.value)
+
+const isEmpty = computed(() => !isLoading.value && !isError.value && items.value.length === 0)
+const isEndReached = computed(
+  () => !isLoading.value && !isError.value && !hasMore.value && items.value.length > 0
+)
+
+async function search(value: string) {
+  activeSearch.value = value || ''
+  isError.value = false
+  error.value = null
+  isLoading.value = true
+
+  try {
+    const res = await cryptoService.getCryptos({
+      page: 1,
+      pageSize,
+      search: activeSearch.value,
+    })
+    items.value = res.data
+    page.value = res.page
+    hasMore.value = res.hasMore
+  } catch (e) {
+    isError.value = true
+    error.value = e instanceof Error ? e : new Error('Ocorreu um erro inesperado.')
+    items.value = []
+    page.value = 0
+    hasMore.value = false
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function loadMore() {
+  if (isLoading.value || !hasMore.value) return
+  isLoading.value = true
+  isError.value = false
+  error.value = null
+
+  try {
+    const nextPage = page.value + 1
+    const res = await cryptoService.getCryptos({
+      page: nextPage,
+      pageSize,
+      search: activeSearch.value,
+    })
+    items.value = [...items.value, ...res.data]
+    page.value = res.page
+    hasMore.value = res.hasMore
+  } catch (e) {
+    isError.value = true
+    error.value = e instanceof Error ? e : new Error('Ocorreu um erro inesperado.')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function retry() {
+  void search(activeSearch.value)
+}
+
 const debouncedSearch = useDebounce(searchInput, 500)
 const isSearching = ref(false)
 
 watch(debouncedSearch, value => {
-  if (value !== route.query.search) {
+  const currentQuery = typeof route.query.search === 'string' ? route.query.search : ''
+  if (value !== currentQuery) {
     router.replace({ query: { ...route.query, search: value || undefined } })
     isSearching.value = true
     search(value).finally(() => {
@@ -331,8 +404,8 @@ watch(debouncedSearch, value => {
 })
 
 onMounted(() => {
-  if (route.query.search && route.query.search !== searchInput.value) {
-    searchInput.value = route.query.search as string
-  }
+  const initialQuery = typeof route.query.search === 'string' ? route.query.search : ''
+  if (initialQuery && initialQuery !== searchInput.value) searchInput.value = initialQuery
+  void search(searchInput.value)
 })
 </script>
