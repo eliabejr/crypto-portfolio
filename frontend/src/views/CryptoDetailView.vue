@@ -1,7 +1,6 @@
 <template>
   <div class="w-full">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Back Button -->
       <Button variant="ghost" class="mb-6 -ml-2" @click="$router.back()">
         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -38,7 +37,6 @@
 
       <div v-else-if="crypto"
         class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <!-- Header Section -->
         <div class="px-8 pt-8 pb-6 border-b border-gray-200 dark:border-gray-700">
           <div class="flex items-start justify-between">
             <div class="flex items-center space-x-5">
@@ -86,7 +84,6 @@
           </div>
         </div>
 
-        <!-- Metrics Grid -->
         <div class="px-8 py-6">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
             <div class="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-5 border border-gray-200 dark:border-gray-700">

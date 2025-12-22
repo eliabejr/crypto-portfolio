@@ -5,7 +5,7 @@
 
       <div v-if="isLoading" class="space-y-6">
         <div class="flex items-center gap-4">
-          <Skeleton width="w-16" height="h-16" className="rounded-full" />
+          <Skeleton width="w-16" height="h-16" class-name="rounded-full" />
           <div class="flex-1 space-y-2">
             <Skeleton width="w-32" height="h-6" />
             <Skeleton width="w-48" height="h-4" />
@@ -17,12 +17,20 @@
         </div>
       </div>
 
-      <ErrorState v-else-if="error" :message="error.message || 'Erro ao carregar asset'" @retry="loadAsset" />
+      <ErrorState
+        v-else-if="error"
+        :message="error.message || 'Erro ao carregar asset'"
+        @retry="loadAsset"
+      />
 
       <div v-else-if="asset" class="space-y-6">
         <div class="flex items-start justify-between">
           <AssetHeader :asset="asset" />
-          <FavoriteButton :asset-id="asset.id" :is-favorite="isFavorite" @toggle="handleToggleFavorite" />
+          <FavoriteButton
+            :asset-id="asset.id"
+            :is-favorite="isFavorite"
+            @toggle="handleToggleFavorite"
+          />
         </div>
 
         <AssetInfo :asset="asset" />
