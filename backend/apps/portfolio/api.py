@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
@@ -20,7 +22,7 @@ class PortfolioItemUpdateIn(Schema):
 
 
 class PortfolioItemOut(Schema):
-    id: str
+    id: UUID
     asset: AssetOut
     quantity: float
     avg_price: float
@@ -50,7 +52,7 @@ def create_portfolio_item(request, payload: PortfolioItemCreateIn):
 
 
 @router.get("/{portfolio_item_id}", response=PortfolioItemOut)
-def get_portfolio_item(request, portfolio_item_id: str):
+def get_portfolio_item(request, portfolio_item_id: UUID):
     item = (
         PortfolioItem.objects.filter(id=portfolio_item_id)
         .select_related("asset")
@@ -63,7 +65,7 @@ def get_portfolio_item(request, portfolio_item_id: str):
 
 @router.put("/{portfolio_item_id}", response=PortfolioItemOut)
 def update_portfolio_item(
-    request, portfolio_item_id: str, payload: PortfolioItemUpdateIn
+    request, portfolio_item_id: UUID, payload: PortfolioItemUpdateIn
 ):
     item = (
         PortfolioItem.objects.filter(id=portfolio_item_id)
@@ -93,7 +95,7 @@ def update_portfolio_item(
 
 
 @router.delete("/{portfolio_item_id}", response={204: None})
-def delete_portfolio_item(request, portfolio_item_id: str):
+def delete_portfolio_item(request, portfolio_item_id: UUID):
     deleted, _ = PortfolioItem.objects.filter(id=portfolio_item_id).delete()
     if not deleted:
         raise HttpError(404, "Portfolio item not found")
