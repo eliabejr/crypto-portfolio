@@ -20,9 +20,9 @@ INSTALLED_APPS = [
 
     "corsheaders",
 
-    "apps.assets",
-    "apps.portfolio",
-    "apps.favorites",
+    "apps.assets.apps.AssetsConfig",
+    "apps.portfolio.apps.PortfolioConfig",
+    "apps.favorites.apps.FavoritesConfig",
 ]
 
 MIDDLEWARE = [
@@ -39,6 +39,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = "config.urls"
 
 WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
     "default": dj_database_url.parse(
@@ -49,6 +50,22 @@ DATABASES = {
         conn_max_age=600,
     )
 }
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    }
+]
 
 AUTH_PASSWORD_VALIDATORS = [
     {
