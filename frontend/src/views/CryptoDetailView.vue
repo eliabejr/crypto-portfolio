@@ -51,16 +51,22 @@
                 </p>
               </div>
             </div>
-            <button
-              class="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#86BC25] focus:ring-offset-2"
-              :aria-label="isInWatchlist ? 'Remover da watchlist' : 'Adicionar à watchlist'" @click="toggleWatchlist">
-              <svg v-if="isInWatchlist" class="w-6 h-6 text-yellow-500 fill-current" fill="none" stroke="currentColor"
-                viewBox="0 0 24 24">
+            <button :class="[
+              'p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#86BC25] focus:ring-offset-2',
+              isAnimating ? 'star-animate' : '',
+            ]" :aria-label="localIsInWatchlist ? 'Remover da watchlist' : 'Adicionar à watchlist'"
+              @click="toggleWatchlist">
+              <svg v-if="localIsInWatchlist" :class="[
+                'w-6 h-6 text-yellow-500 fill-current transition-all duration-300',
+                isAnimating ? 'scale-125' : 'scale-100',
+              ]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
               </svg>
-              <svg v-else class="w-6 h-6 text-gray-400 hover:text-yellow-500 transition-colors duration-200" fill="none"
-                stroke="currentColor" viewBox="0 0 24 24">
+              <svg v-else :class="[
+                'w-6 h-6 text-gray-400 hover:text-yellow-500 transition-all duration-300',
+                isAnimating ? 'scale-125' : 'scale-100',
+              ]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
               </svg>
@@ -169,10 +175,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useFetch } from '../composables/useFetch'
 import { cryptoService } from '../services/cryptoService'
+import { favoritesApi } from '../modules/favorites/api/favorites.api'
 import Button from '../components/ui/Button.vue'
 import Loader from '../components/ui/Loader.vue'
 import type { CryptoCurrency } from '../types/crypto'
@@ -188,9 +195,30 @@ const {
   execute: retry,
 } = useFetch<CryptoCurrency | null>(() => cryptoService.getCryptoById(cryptoId))
 
-const isInWatchlist = computed(() => {
-  if (!crypto.value) return false
-  return cryptoService.isInWatchlist(crypto.value.id)
+const localIsInWatchlist = ref(false)
+const isAnimating = ref(false)
+
+const updateLocalState = () => {
+  if (crypto.value) {
+    localIsInWatchlist.value = cryptoService.isInWatchlist(crypto.value.id)
+  }
+}
+
+watch(crypto, () => {
+  updateLocalState()
+}, { immediate: true })
+
+onMounted(() => {
+  updateLocalState()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('watchlist-changed', updateLocalState)
+  }
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('watchlist-changed', updateLocalState)
+  }
 })
 
 const formatPrice = (price: number): string => {
@@ -213,13 +241,34 @@ const formatLargeNumber = (value: number): string => {
   return value.toFixed(2)
 }
 
-const toggleWatchlist = () => {
+const toggleWatchlist = async () => {
   if (!crypto.value) return
-  if (isInWatchlist.value) {
+
+  isAnimating.value = true
+  const previousState = localIsInWatchlist.value
+  localIsInWatchlist.value = !previousState
+
+  if (previousState) {
     cryptoService.removeFromWatchlist(crypto.value.id)
   } else {
     cryptoService.addToWatchlist(crypto.value.id)
   }
+
+  try {
+    await favoritesApi.toggleFavorite(crypto.value.id)
+  } catch (error) {
+    localIsInWatchlist.value = previousState
+    if (previousState) {
+      cryptoService.addToWatchlist(crypto.value.id)
+    } else {
+      cryptoService.removeFromWatchlist(crypto.value.id)
+    }
+    console.error('[toggleWatchlist]', error)
+  }
+
+  setTimeout(() => {
+    isAnimating.value = false
+  }, 300)
 }
 
 const handleImageError = (event: Event) => {
@@ -229,3 +278,23 @@ const handleImageError = (event: Event) => {
   }
 }
 </script>
+
+<style scoped>
+.star-animate {
+  animation: starPop 0.3s ease-out;
+}
+
+@keyframes starPop {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.3);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+</style>

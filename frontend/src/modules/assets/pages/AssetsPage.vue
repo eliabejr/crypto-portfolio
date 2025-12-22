@@ -7,19 +7,12 @@
       </div>
 
       <div class="max-w-md">
-        <SearchInput
-          :model-value="searchInput"
-          @update:model-value="handleSearchInput"
-          @search="handleSearch"
-        />
+        <SearchInput :model-value="searchInput" @update:model-value="handleSearchInput" @search="handleSearch" />
       </div>
 
       <div v-if="isInitialLoading" class="space-y-4">
-        <div
-          v-for="i in 5"
-          :key="i"
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
-        >
+        <div v-for="i in 5" :key="i"
+          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
           <div class="flex items-center gap-3">
             <Skeleton width="w-10" height="h-10" class-name="rounded-full" />
             <div class="flex-1 space-y-2">
@@ -30,40 +23,25 @@
         </div>
       </div>
 
-      <ErrorState
-        v-else-if="isError"
-        :message="error?.message || 'Erro ao carregar assets'"
-        @retry="retry"
-      />
+      <ErrorState v-else-if="isError" :message="error?.message || 'Erro ao carregar assets'" @retry="retry" />
 
-      <EmptyState
-        v-else-if="isEmpty"
-        title="Nenhum asset encontrado"
-        description="Tente ajustar sua busca ou filtros."
-      />
+      <EmptyState v-else-if="isEmpty" title="Nenhum asset encontrado"
+        description="Tente ajustar sua busca ou filtros." />
 
       <div v-else class="space-y-4">
         <div v-for="asset in items" :key="asset.id">
-          <AssetCard
-            :asset="asset"
-            :is-favorite="favoritesApi.isFavorite(asset.id)"
-            @click="goToDetail(asset.id)"
-            @favorite-toggle="toggleFavorite(asset.id)"
-          />
+          <AssetCard :asset="asset" :is-favorite="favoriteStates[asset.id] ?? favoritesApi.isFavorite(asset.id)"
+            @click="goToDetail(asset.id)" @favorite-toggle="toggleFavorite(asset.id)" />
         </div>
 
-        <InfiniteScrollContainer
-          :on-load-more="loadMore"
-          :has-more="hasMore"
-          :is-loading="isPageLoading"
-        />
+        <InfiniteScrollContainer :on-load-more="loadMore" :has-more="hasMore" :is-loading="isPageLoading" />
       </div>
     </div>
   </AppContainer>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDebounce } from '../../../composables/useDebounce'
 import { useInfiniteList } from '../../../composables/useInfiniteList'
@@ -80,6 +58,8 @@ import ErrorState from '../../../components/ui/ErrorState.vue'
 const router = useRouter()
 const route = useRoute()
 const searchInput = ref((route.query.q as string) || '')
+
+const favoriteStates = reactive<Record<string, boolean>>({})
 
 const {
   items,
@@ -126,6 +106,14 @@ const goToDetail = (id: string) => {
 }
 
 const toggleFavorite = async (assetId: string) => {
-  await favoritesApi.toggleFavorite(assetId)
+  const previousState = favoriteStates[assetId] ?? favoritesApi.isFavorite(assetId)
+  favoriteStates[assetId] = !previousState
+
+  try {
+    await favoritesApi.toggleFavorite(assetId)
+  } catch (error) {
+    favoriteStates[assetId] = previousState
+    console.error('[toggleFavorite]', error)
+  }
 }
 </script>

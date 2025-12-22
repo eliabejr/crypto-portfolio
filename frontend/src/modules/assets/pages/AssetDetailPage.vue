@@ -17,20 +17,12 @@
         </div>
       </div>
 
-      <ErrorState
-        v-else-if="error"
-        :message="error.message || 'Erro ao carregar asset'"
-        @retry="loadAsset"
-      />
+      <ErrorState v-else-if="error" :message="error.message || 'Erro ao carregar asset'" @retry="loadAsset" />
 
       <div v-else-if="asset" class="space-y-6">
         <div class="flex items-start justify-between">
           <AssetHeader :asset="asset" />
-          <FavoriteButton
-            :asset-id="asset.id"
-            :is-favorite="isFavorite"
-            @toggle="handleToggleFavorite"
-          />
+          <FavoriteButton :asset-id="asset.id" :is-favorite="isFavorite" @toggle="handleToggleFavorite" />
         </div>
 
         <AssetInfo :asset="asset" />
@@ -87,7 +79,16 @@ const loadAsset = async () => {
 
 const handleToggleFavorite = async () => {
   if (!asset.value) return
-  isFavorite.value = await favoritesApi.toggleFavorite(asset.value.id)
+
+  const previousState = isFavorite.value
+  isFavorite.value = !previousState
+
+  try {
+    isFavorite.value = await favoritesApi.toggleFavorite(asset.value.id)
+  } catch (error) {
+    isFavorite.value = previousState
+    console.error('[handleToggleFavorite]', error)
+  }
 }
 
 const handleAddToPortfolio = async (data: { quantity: number; avgPrice: number }) => {
