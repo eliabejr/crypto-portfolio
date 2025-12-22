@@ -1,7 +1,8 @@
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: database
+    restart: unless-stopped
     environment:
       POSTGRES_DB: crypto_portfolio
       POSTGRES_USER: postgres
@@ -10,6 +11,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -21,7 +27,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/crypto_portfolio
       DJANGO_SETTINGS_MODULE: config.settings
