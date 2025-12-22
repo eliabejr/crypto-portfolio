@@ -10,7 +10,6 @@ vi.mock('vue-router', () => ({
 }))
 
 describe('useInfiniteList', () => {
-  let routeQuery: Record<string, string | number>
   let mockRoute: ReturnType<typeof createMockRoute>
   const mockRouter = {
     replace: vi.fn(({ query }) => {
@@ -52,7 +51,6 @@ describe('useInfiniteList', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    routeQuery = {}
     mockRoute = createMockRoute()
     ;(useRouter as any).mockReturnValue(mockRouter)
     ;(useRoute as any).mockReturnValue(mockRoute)
@@ -66,8 +64,14 @@ describe('useInfiniteList', () => {
     search?: string
   ) => Promise<AssetListResponse>) => {
     let callCount = 0
-    return async (page: number, pageSize: number, search?: string) => {
-      const response = responses[callCount] || responses[responses.length - 1]
+    return async (_page: number, _pageSize: number, _search?: string) => {
+      const response = responses[callCount] ?? responses[responses.length - 1] ?? {
+        data: [],
+        page: 1,
+        pageSize: 20,
+        total: 0,
+        hasMore: false,
+      }
       callCount++
       return Promise.resolve(response)
     }
@@ -392,7 +396,7 @@ describe('useInfiniteList', () => {
 
     updateRouteQuery({ page: '1' })
 
-    const { isLoading, loadMore } = useInfiniteList(fetcher)
+    const { loadMore } = useInfiniteList(fetcher)
 
 
     await new Promise(resolve => setTimeout(resolve, 0))
@@ -502,7 +506,7 @@ describe('useInfiniteList', () => {
 
     updateRouteQuery({ page: '1' })
 
-    const { items } = useInfiniteList(fetcher)
+    useInfiniteList(fetcher)
 
 
     await nextTick()
