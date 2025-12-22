@@ -1,6 +1,9 @@
 <template>
   <div :class="['flex items-center justify-center', sizeClasses]">
-    <div class="border-4 border-gray-200 border-t-[#86BC25] rounded-full animate-spin" :class="spinnerSize" />
+    <div
+      class="border-4 border-gray-200 border-t-[#86BC25] rounded-full animate-spin"
+      :class="spinnerSize"
+    />
   </div>
 </template>
 

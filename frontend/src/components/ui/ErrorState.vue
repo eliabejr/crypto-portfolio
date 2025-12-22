@@ -2,8 +2,12 @@
   <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
     <div class="mb-4 text-red-500">
       <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
     </div>
     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
@@ -12,9 +16,7 @@
     <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-4">
       {{ message }}
     </p>
-    <Button v-if="showRetry" @click="$emit('retry')" variant="primary">
-      Tentar novamente
-    </Button>
+    <Button v-if="showRetry" variant="primary" @click="$emit('retry')"> Tentar novamente </Button>
   </div>
 </template>
 

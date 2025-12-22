@@ -1,5 +1,7 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+  <div
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700"
+  >
     <div class="flex items-start justify-between mb-4">
       <div class="flex items-center space-x-3">
         <Skeleton width="w-12" height="h-12" class-name="rounded-full" />
