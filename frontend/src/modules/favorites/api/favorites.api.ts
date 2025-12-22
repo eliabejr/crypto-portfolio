@@ -11,7 +11,7 @@ let favoriteIdByAssetId = new Map<string, string>()
 
 function syncWatchlistFromFavorites(favorites: FavoriteDto[]) {
   favoriteIdByAssetId = new Map(favorites.map(f => [f.asset.id, f.id]))
-  cryptoService.setWatchlist(favorites.map(f => f.asset.id))
+  cryptoService.setWatchlist(favorites.map(f => f.asset.id), true)
 }
 
 export const favoritesApi = {

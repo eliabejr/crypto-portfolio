@@ -30,10 +30,10 @@ function getErrorMessage(errorData: unknown): string | undefined {
   if (!errorData || typeof errorData !== 'object') return undefined
   const obj = errorData as Record<string, unknown>
 
-  const message = obj['message']
+  const message = obj.message
   if (typeof message === 'string' && message.trim()) return message
 
-  const detail = obj['detail']
+  const detail = obj.detail
   if (typeof detail === 'string' && detail.trim()) return detail
 
   return undefined
@@ -45,7 +45,7 @@ export interface HttpRequestOptions extends RequestInit {
 
 function buildUrlWithParams(baseUrl: string, params?: Record<string, string | number>): string {
   if (!params) return baseUrl
-  
+
   const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
@@ -54,7 +54,7 @@ function buildUrlWithParams(baseUrl: string, params?: Record<string, string | nu
   })
   const queryString = searchParams.toString()
   if (!queryString) return baseUrl
-  
+
   return baseUrl + (baseUrl.includes('?') ? '&' : '?') + queryString
 }
 
@@ -65,7 +65,7 @@ export async function httpRequest<T>(
   let url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`
   const { params, ...fetchOptions } = options
   url = buildUrlWithParams(url, params)
-  
+
   const config: RequestInit = {
     ...fetchOptions,
     headers: {
@@ -91,32 +91,28 @@ export async function httpRequest<T>(
     if (error instanceof HttpError) {
       throw error
     }
-    throw new HttpError(
-      error instanceof Error ? error.message : 'Network error',
-      0,
-      error
-    )
+    throw new HttpError(error instanceof Error ? error.message : 'Network error', 0, error)
   }
 }
 
 export const http = {
   get: <T>(endpoint: string, options?: HttpRequestOptions) =>
     httpRequest<T>(endpoint, { ...options, method: 'GET' }),
-  
+
   post: <T>(endpoint: string, data?: unknown, options?: HttpRequestOptions) =>
     httpRequest<T>(endpoint, {
       ...options,
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     }),
-  
+
   put: <T>(endpoint: string, data?: unknown, options?: HttpRequestOptions) =>
     httpRequest<T>(endpoint, {
       ...options,
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
     }),
-  
+
   delete: <T>(endpoint: string, options?: HttpRequestOptions) =>
     httpRequest<T>(endpoint, { ...options, method: 'DELETE' }),
 }

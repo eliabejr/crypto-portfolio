@@ -8,11 +8,12 @@
               Dashboard
             </h1>
             <p class="mt-2 text-base sm:text-lg text-gray-600 dark:text-gray-400">
-              Visão geral do portfólio (métricas simuladas)
+              Visão geral do portfólio
             </p>
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400">
-            Atualizado: <span class="font-medium text-gray-700 dark:text-gray-200">{{ updatedAt }}</span>
+            Atualizado:
+            <span class="font-medium text-gray-700 dark:text-gray-200">{{ updatedAt }}</span>
           </div>
         </div>
 
@@ -69,7 +70,9 @@
           class="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Ativos na watchlist</div>
+              <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Ativos na watchlist
+              </div>
               <div class="mt-1 text-2xl font-bold tracking-tight tabular-nums">
                 {{ watchlistCount }}
               </div>
@@ -98,33 +101,33 @@
             <div class="flex items-center justify-between">
               <div>
                 <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Performance (mock)
+                  Performance
                 </div>
-                <div class="mt-1 text-lg font-semibold">Últimos 7 dias</div>
+                <div class="mt-1 text-lg font-semibold">Atual</div>
               </div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">Sparkline ilustrativa</div>
             </div>
 
             <div
               class="mt-4 rounded-xl border border-gray-200 bg-gradient-to-b from-[#86BC25]/10 to-white p-4 dark:border-gray-800 dark:from-[#86BC25]/10 dark:to-gray-900">
-              <svg viewBox="0 0 400 120" class="w-full h-28" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stop-color="rgb(134 188 37)" stop-opacity="0.35" />
-                    <stop offset="100%" stop-color="rgb(134 188 37)" stop-opacity="0" />
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0,90 C40,70 70,95 110,70 C150,45 190,60 230,40 C270,20 320,35 360,25 C380,20 390,25 400,18 L400,120 L0,120 Z"
-                  fill="url(#area)" />
-                <path d="M0,90 C40,70 70,95 110,70 C150,45 190,60 230,40 C270,20 320,35 360,25 C380,20 390,25 400,18"
-                  fill="none" stroke="rgb(134 188 37)" stroke-width="3" stroke-linecap="round" />
-              </svg>
+              <div class="flex items-end justify-between gap-6">
+                <div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">Retorno</div>
+                  <div class="mt-1 text-2xl font-bold tabular-nums">
+                    {{ performanceText }}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs text-gray-500 dark:text-gray-400">P&L</div>
+                  <div class="mt-1 text-lg font-semibold tabular-nums">
+                    {{ pnlText }}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
           <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Alocação (mock)</div>
+            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Alocação</div>
             <div class="mt-1 text-lg font-semibold">Top ativos</div>
 
             <div class="mt-4 space-y-4">
@@ -144,7 +147,7 @@
             </div>
 
             <div class="mt-5 text-xs text-gray-500 dark:text-gray-400">
-              Dica: adicione/remova itens da watchlist para ver o contador no topo atualizar.
+              Baseado no valor atual estimado do portfólio.
             </div>
           </div>
         </div>
@@ -154,16 +157,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { cryptoService } from '../../../services/cryptoService'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { favoritesApi } from '../../favorites/api/favorites.api'
+import { portfolioApi } from '../../portfolio/api/portfolio.api'
+import type { PortfolioItem } from '../../portfolio/types'
 import AppContainer from '../../../components/layout/AppContainer.vue'
 
-const updatedAt = new Intl.DateTimeFormat('pt-BR', {
-  hour: '2-digit',
-  minute: '2-digit',
-}).format(new Date())
+const updatedAt = ref(
+  new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(new Date())
+)
 
-const watchlistCount = ref(cryptoService.getWatchlist().length)
+const watchlistCount = ref(0)
+const portfolioItems = ref<PortfolioItem[]>([])
 
 type KpiTone = 'positive' | 'negative' | 'neutral'
 type KpiIcon = 'wallet' | 'trend' | 'star' | 'coin'
@@ -177,54 +182,109 @@ type Kpi = {
   icon: KpiIcon
 }
 
-const syncWatchlistCount = () => {
-  watchlistCount.value = cryptoService.getWatchlist().length
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
+
+const formatPercent = (value: number) =>
+  new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 2 }).format(value)
+
+const getItemValue = (item: PortfolioItem) => {
+  const price = item.asset.current_price ?? item.avgPrice
+  return item.quantity * price
+}
+
+const totalCost = computed(() =>
+  portfolioItems.value.reduce((sum, item) => sum + item.quantity * item.avgPrice, 0)
+)
+const totalValue = computed(() =>
+  portfolioItems.value.reduce((sum, item) => sum + getItemValue(item), 0)
+)
+
+const pnlValue = computed(() => totalValue.value - totalCost.value)
+const pnlPct = computed(() => (totalCost.value > 0 ? pnlValue.value / totalCost.value : 0))
+
+const performanceText = computed(() => formatPercent(pnlPct.value))
+const pnlText = computed(() => formatCurrency(pnlValue.value))
+
+const allocation = computed(() => {
+  const total = totalValue.value
+  if (total <= 0) return []
+
+  return [...portfolioItems.value]
+    .map((item) => ({
+      symbol: item.asset.symbol.toUpperCase(),
+      name: item.asset.name,
+      value: getItemValue(item),
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 4)
+    .map((row) => ({
+      symbol: row.symbol,
+      name: row.name,
+      percent: Math.max(0, Math.round((row.value / total) * 100)),
+    }))
+})
+
+const kpis = computed<Kpi[]>(() => [
+  {
+    title: 'Valor do portfólio',
+    value: formatCurrency(totalValue.value),
+    caption: 'estimado',
+    tone: pnlValue.value >= 0 ? 'positive' : 'negative',
+    icon: 'wallet',
+  },
+  {
+    title: 'Performance',
+    value: formatPercent(pnlPct.value),
+    caption: 'vs. preço médio',
+    tone: pnlValue.value >= 0 ? 'positive' : 'negative',
+    icon: 'trend',
+  },
+  {
+    title: 'Ativos no portfólio',
+    value: String(portfolioItems.value.length),
+    caption: 'posições',
+    tone: 'neutral',
+    icon: 'coin',
+  },
+  {
+    title: 'Favoritos',
+    value: String(watchlistCount.value),
+    caption: 'salvos',
+    tone: 'neutral',
+    icon: 'star',
+  },
+])
+
+void kpis
+void allocation
+void performanceText
+void pnlText
+
+const loadDashboard = async () => {
+  const [favorites, portfolio] = await Promise.all([
+    favoritesApi.listFavorites(),
+    portfolioApi.getPortfolio(),
+  ])
+  watchlistCount.value = favorites.length
+  portfolioItems.value = portfolio.items
+  updatedAt.value = new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(
+    new Date()
+  )
 }
 
 onMounted(() => {
-  syncWatchlistCount()
+  loadDashboard()
   if (typeof window !== 'undefined') {
-    window.addEventListener('watchlist-changed', syncWatchlistCount)
+    window.addEventListener('watchlist-changed', loadDashboard)
+    window.addEventListener('portfolio-changed', loadDashboard)
   }
 })
 
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
-    window.removeEventListener('watchlist-changed', syncWatchlistCount)
+    window.removeEventListener('watchlist-changed', loadDashboard)
+    window.removeEventListener('portfolio-changed', loadDashboard)
   }
 })
-
-const kpis: Kpi[] = [
-  {
-    title: 'Valor do portfólio',
-    value: '$128,450.23',
-    delta: '+$2,691.12',
-    caption: 'nas últimas 24h',
-    tone: 'positive',
-    icon: 'wallet',
-  },
-  {
-    title: 'Performance (24h)',
-    value: '+2.14%',
-    delta: '+0.36pp',
-    caption: 'vs. ontem',
-    tone: 'positive',
-    icon: 'trend',
-  },
-  {
-    title: 'Pior dia (7d)',
-    value: '-1.18%',
-    delta: '-0.22pp',
-    caption: 'variação',
-    tone: 'negative',
-    icon: 'coin',
-  },
-]
-
-const allocation = [
-  { symbol: 'BTC', name: 'Bitcoin', percent: 46 },
-  { symbol: 'ETH', name: 'Ethereum', percent: 28 },
-  { symbol: 'SOL', name: 'Solana', percent: 14 },
-  { symbol: 'USDC', name: 'Stable', percent: 12 },
-]
 </script>
