@@ -10,10 +10,21 @@ const getWatchlist = (): string[] => {
   return stored ? JSON.parse(stored) : []
 }
 
-const saveWatchlist = (ids: string[]) => {
+const saveWatchlist = (ids: string[], skipEvent = false) => {
   if (typeof window === 'undefined') return
-  localStorage.setItem(WATCHLIST_KEY, JSON.stringify(ids))
-  window.dispatchEvent(new Event('watchlist-changed'))
+  const currentIds = getWatchlist()
+  const newIds = [...new Set(ids)]
+  
+  const hasChanged = 
+    currentIds.length !== newIds.length ||
+    !currentIds.every(id => newIds.includes(id)) ||
+    !newIds.every(id => currentIds.includes(id))
+  
+  localStorage.setItem(WATCHLIST_KEY, JSON.stringify(newIds))
+  
+  if (hasChanged && !skipEvent) {
+    window.dispatchEvent(new Event('watchlist-changed'))
+  }
 }
 
 export const cryptoService = {
@@ -60,6 +71,10 @@ export const cryptoService = {
 
   getWatchlist(): string[] {
     return getWatchlist()
+  },
+
+  setWatchlist(ids: string[], skipEvent = false): void {
+    saveWatchlist([...new Set(ids)], skipEvent)
   },
 
   addToWatchlist(cryptoId: string): void {
