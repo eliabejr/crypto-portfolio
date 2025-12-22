@@ -33,6 +33,7 @@ const showEndMessage = computed(() => !props.hasMore && !props.isLoading)
 
 const handleIntersection = (entries: IntersectionObserverEntry[]) => {
   const entry = entries[0]
+  if (!entry) return
   if (entry.isIntersecting && props.hasMore && !props.isLoading) {
     props.onLoadMore()
   }

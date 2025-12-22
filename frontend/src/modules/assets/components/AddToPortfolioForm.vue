@@ -3,20 +3,40 @@
     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
       Adicionar ao Portfólio
     </h3>
-    <form @submit.prevent="handleSubmit" class="space-y-4">
+    <form class="space-y-4" @submit.prevent="handleSubmit">
       <div>
-        <label for="quantity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label
+          for="quantity"
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
           Quantidade
         </label>
-        <Input id="quantity" v-model="quantity" type="number" placeholder="0.00" :disabled="isSubmitting"
-          step="0.00000001" min="0" />
+        <Input
+          id="quantity"
+          v-model="quantity"
+          type="number"
+          placeholder="0.00"
+          :disabled="isSubmitting"
+          step="0.00000001"
+          min="0"
+        />
       </div>
       <div>
-        <label for="avgPrice" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label
+          for="avgPrice"
+          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+        >
           Preço Médio (USD)
         </label>
-        <Input id="avgPrice" v-model="avgPrice" type="number" placeholder="0.00" :disabled="isSubmitting" step="0.01"
-          min="0" />
+        <Input
+          id="avgPrice"
+          v-model="avgPrice"
+          type="number"
+          placeholder="0.00"
+          :disabled="isSubmitting"
+          step="0.01"
+          min="0"
+        />
       </div>
       <Button type="submit" :disabled="isSubmitting || !isValid" class="w-full">
         {{ isSubmitting ? 'Adicionando...' : 'Adicionar' }}
